@@ -1,0 +1,82 @@
+pip install libretranslatepy #this is used to import the translator api
+pip install fpdf #this is used to create the required output pdf
+pip install PyPDF2 #this is used to read the given input pdf
+pip install mosestokenizer #this is used to split the setences from the input for faster processing
+#----Input PDF Creation Code-----
+#Creating Input pdf file if not created and converting input text to pdf.
+from mosestokenizer import *
+from fpdf import FPDF
+lang = input("enter language:\n") # This is the language of the input file
+input_txt = input("enter text\n") # We take the text input from the user  
+# The function given below splits the sentences 
+def split_sentences(paragraph, language):
+    if language == lang:
+        with MosesSentenceSplitter(language) as splitter:
+            return splitter([paragraph])
+text = split_sentences(input_txt,lang)
+pdf = FPDF()  
+pdf.add_page() # Adding a page to a newly created pdf file
+# set style and size of font
+pdf.set_font("Arial", size = 15)
+f = text
+# insert the texts in pdf
+for x in f:
+    pdf.multi_cell(200, 10, txt = x, align = 'L')
+  
+# save the pdf with name input.pdf
+pdf.output("input.pdf")  
+print("PDF File Generated")
+#----Language Translation Code---
+#taking input as pdf and translating to given language and providing output pdf for it.
+from libretranslatepy import LibreTranslateAPI
+from fpdf import FPDF
+from mosestokenizer import *
+lt = LibreTranslateAPI("https://translate.argosopentech.com/") #this line contains the url from which we are implementing the language translation.
+import PyPDF2
+from fpdf import FPDF
+# create a pdf file object
+pdfFileObj = open('input.pdf', 'rb') # Here we are opening an aldready existing pdf that has been uplaoded on google colaboratory.
+# create a pdf reader object
+pdfReader = PyPDF2.PdfReader(pdfFileObj)
+print("Language Options Are Given Below \n")
+print(lt.languages())
+print()
+inlang = input("Enter the input language of pdf file \n")
+outlang = input("Enter the language to translate to \n ")
+extracted_text = ''
+for pageObj in pdfReader.pages:
+        extracted_text += pageObj.extract_text()
+
+pdfFileObj.close()
+# The below function is used to split the extracted text into sentences for faster translation.
+def split_sentences(paragraph, language):
+    if language == inlang:
+        with MosesSentenceSplitter(language) as splitter:
+            return splitter([paragraph])
+
+text = split_sentences(extracted_text,inlang)  # We store the split sentences into variable text.
+
+translated_text=lt.translate(text, inlang, outlang) # Here we are translating the given input text from input  language into the rquired output language.
+pdf = FPDF()
+# we create a .txt file to store the translated text into it.
+file = open("translated.txt", "w")
+file.write(translated_text)
+file.close()
+pdf = FPDF(orientation = 'P', unit = 'mm', format='A4')  
+# Add a page
+pdf.add_page()
+  
+# set style and size of font
+pdf.set_font("Arial", size = 15)
+# open the text file in read mode
+file = open("translated.txt", "r")
+
+f = file
+ 
+# insert the texts in pdf
+for x in f:
+    pdf.multi_cell(200, 10, txt = x, align = 'L')
+  
+# save the pdf with name .pdf
+pdf.output("translated.pdf")
+print("PDF Translation Successful")
